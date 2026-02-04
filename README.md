@@ -1,2 +1,1 @@
-# NerdRes
-RaidRes Mimic for Nerds SR Threads
+# dioaffo1.github.io

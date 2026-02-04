@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Discord → RollFor Base64 (Turtle WoW)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 16px; max-width: 1100px; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
+    .card h2 { font-size: 14px; margin: 0 0 8px; }
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    input[type="number"], select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .controls2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .controls3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #333;
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+    }
+    button.secondary { background: #fff; color: #111; border-color: #aaa; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .small { font-size: 12px; color: #444; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid #eee; padding: 6px 6px; vertical-align: top; }
+    th { text-align: left; color: #333; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; border: 1px solid #ddd; }
+    .high { background: #eaffea; }
+    .medium { background: #fff7db; }
+    .low { background: #ffe4e4; }
+    .nomatch { background: #f2f2f2; }
+    .warn { color: #9a0000; font-weight: 600; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    details > summary { cursor: pointer; user-select: none; }
+  </style>
+</head>
+<body>
+  <h1>Discord Paste → RollFor Base64</h1>
+
+  <div class="card">
+    <h2>1) Select Raid </h2>
+
+    <div class="controls2">
+      <div>
+        <label class="small">Select Raid</label>
+        <select id="raidSelect" disabled>
+          <option value="">Loading raid list…</option>
+        </select>
+        <div class="small" style="margin-top:6px">
+          This page loads <span class="mono">data/raids.json</span>, then fetches the selected raid JSON from <span class="mono">data/</span>.
+        </div>
+      </div>
+
+      <div>
+        <label class="small">Status</label>
+        <div class="small" id="raidStatus">Loading…</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px" class="controls2">
+      <button id="loadSelectedRaidBtn" disabled>Load Selected Raid</button>
+      <div class="small">
+        If the raid list fails to load, check that <span class="mono">data/raids.json</span> exists and paths are correct.
+      </div>
+    </div>
+  </div>
+
+<div class="row" style="margin-top:12px">
+    <div class="card">
+      <h2>2) Paste Discord thread text</h2>
+      <textarea id="discordInput" placeholder="Paste the Discord thread text here..."></textarea>
+
+      <div class="controls" style="margin-top:10px">
+        <div>
+          <label class="small">Fallback “Name - Item” prio</label>
+          <select id="fallbackPrio">
+            <option value="MS" selected>MS</option>
+            <option value="OS">OS</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">Min confidence to accept</label>
+          <input id="minConf" type="number" min="0" max="1" step="0.01" value="0.60" />
+        </div>
+        <div>
+          <label class="small">Fuse threshold (lower = stricter)</label>
+          <input id="fuseThreshold" type="number" min="0" max="1" step="0.01" value="0.45" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px" class="controls2">
+        <button id="runBtn" disabled>PARSE & generate Imports</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+      </div>
+
+      <div style="margin-top:10px" class="small">
+        Parsing supports:
+        <span class="mono">Name - MS - Item</span>,
+        <span class="mono">Name-MS-Item</span>,
+        <span class="mono">Name - Item</span>,
+        Lines with dates/etc are ignored.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3) Output</h2>
+      <div class="small" id="summary">—</div>
+
+      <div style="margin-top:10px">
+        <label class="small"><b>RollFor Base64</b></label>
+        <textarea id="b64Out" readonly></textarea>
+      </div>
+
+      <div style="margin-top:10px">
+        <label class="small"><b>ML Copy (Character-MS/OS-Matched Item Name)</b></label>
+        <textarea id="mlOut" readonly></textarea>
+      </div>
+
+      <div class="controls3" style="margin-top:10px">
+        <button id="copyB64Btn" class="secondary" disabled>Copy RollFor Base64</button>
+        <button id="copyMlBtn" class="secondary" disabled>Copy ML Lines</button>
+        <button id="copyJsonBtn" class="secondary" disabled>Copy Raw JSON</button>
+      </div>
+
+      <div style="margin-top:10px">
+        <details>
+          <summary class="small">Show raw JSON (debug)</summary>
+          <textarea id="jsonOut" readonly></textarea>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h2>4) Match Quality Report</h2>
+    <div class="small">Low confidence / ambiguous rows are flagged for review.</div>
+    <div style="overflow:auto; margin-top:10px">
+      <table id="reportTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Character</th>
+            <th>Prio</th>
+            <th>Input Item</th>
+            <th>Matched Item</th>
+            <th>turtleDbItemId</th>
+            <th>Conf</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Fuse.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+  <script>
+    // -----------------------------
+    // DOM helper
+    // -----------------------------
+    const el = (id) => document.getElementById(id);
+
+    // -----------------------------
+    // Raid DB state (multi-raid upload)
+    // -----------------------------
+    let RAID_NAME = null;
+    let RAID_ITEMS = null; // [{name, turtleDbItemId, quality}]
+    let FUSE = null;
+
+    // key -> { id, name, items: [...] }
+    const RAID_MAP = new Map();
+
+    // For recordkeeping: set once per file upload action
+    // Format: 04Feb2026 (leading zero)
+    let UPLOAD_DATE_STR = null;
+
+    // -----------------------------
+    // ID helpers (recordkeeping)
+    // -----------------------------
+    function stripPunctAndSpaces(s) {
+      // Keep only letters/numbers; remove spaces/punct/apostrophes, etc.
+      return String(s ?? "").replace(/[^A-Za-z0-9]/g, "");
+    }
+
+    function formatUploadDate(d = new Date()) {
+      const day = String(d.getDate()).padStart(2, "0"); // leading zero
+      const mon = d.toLocaleString("en-US", { month: "short" }); // Jan, Feb, ...
+      const year = d.getFullYear();
+      return `${day}${mon}${year}`;
+    }
+
+    function currentRecordId(raidName) {
+      return `${stripPunctAndSpaces(raidName)}_${UPLOAD_DATE_STR || formatUploadDate(new Date())}`;
+    }
+
+    // -----------------------------
+    // Normalization / noise filtering
+    // -----------------------------
+    function normalizeLine(s) {
+      return (s ?? "")
+        .replace(/[—–−]/g, "-")
+        .replace(/[’]/g, "'")
+        .replace(/\u00A0/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    const NOISE_EXACT = new Set([
+      "click to react",
+      "add reaction",
+      "reply",
+      "forward",
+      "more",
+      "edit",
+    ]);
+
+    function isDiscordNoiseLine(raw) {
+      const s = normalizeLine(raw);
+      if (!s) return true;
+      const low = s.toLowerCase();
+
+      // UI junk / emoji-only
+      if (NOISE_EXACT.has(low)) return true;
+      if (low.includes("click to react")) return true;
+      if (/^:.*:$/.test(low)) return true; // :joy:
+      if (/^[-–—]+$/.test(s)) return true;
+
+      // Date-ish separators / timestamps
+      if (/(?:^|\s)(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\w*\s+\d{1,2},\s+\d{4}(?:\s+\d{1,2}:\d{2}\s*(?:am|pm))?/i.test(s)) return true;
+      if (/(?:^|\s)(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(s) && /\d{1,2}:\d{2}\s*(am|pm)/i.test(s)) return true;
+      if (/\b\d{1,2}\/\d{1,2}\/\d{4}\b/.test(s)) return true; // 2/1/2026
+      if (/\byesterday\b|\btoday\b/i.test(s)) return true;
+      if (/^\d{1,2}:\d{2}\s*(am|pm)$/i.test(s)) return true;
+
+      // Header-ish: "Zhu — 2/1/2026 3:05 PM"
+      if (/\s[-–—]\s*\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}\s*(am|pm)\b/i.test(s)) return true;
+
+      return false;
+    }
+
+    function isPlausibleCharacterName(name) {
+      if (!name) return false;
+      if (name.length < 2 || name.length > 24) return false;
+      // WoW names: letters + apostrophe
+      if (!/^[A-Za-z][A-Za-z']*$/.test(name)) return false;
+      return true;
+    }
+
+    function isPlausibleItemText(item) {
+      if (!item) return false;
+      if (item.length < 3 || item.length > 90) return false;
+      if (!/[A-Za-z]/.test(item)) return false;
+      return true;
+    }
+function looksLikeTimeOrDateToken(s) {
+  const t = normalizeLine(s).toLowerCase();
+
+  // Time-only like "1:04 PM" or "01:04pm"
+  if (/^\d{1,2}:\d{2}\s*(am|pm)$/i.test(t)) return true;
+
+  // 24h time like "13:04"
+  if (/^\d{1,2}:\d{2}$/.test(t)) return true;
+
+  // Date-ish like "2/1/2026"
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(t)) return true;
+
+  // Day/month words often present in Discord timestamp lines
+  if (/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(t)) return true;
+  if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i.test(t)) return true;
+
+  return false;
+}
+
+    // -----------------------------
+    // Parser: explicit (MS/OS) + fallback (Name - Item)
+    // -----------------------------
+    function parseDiscordPaste(paste, fallbackPrio) {
+      const lines = (paste ?? "").split(/\r?\n/);
+
+      const out = [];
+      for (const raw0 of lines) {
+        const raw = normalizeLine(raw0);
+        if (isDiscordNoiseLine(raw)) continue;
+
+        // Explicit: Name - MS/OS - Item (allows squished spacing like -MS-)
+        const explicit = raw.match(/^(.*?)\s*-\s*(MS|OS)\s*-\s*(.+?)\s*$/i);
+        if (explicit) {
+          const character = normalizeLine(explicit[1]);
+          const prio = explicit[2].toUpperCase();
+          const itemText = normalizeLine(explicit[3]);
+          if (looksLikeTimeOrDateToken(itemText)) continue;
+
+          if (!isPlausibleCharacterName(character)) continue;
+          if (!isPlausibleItemText(itemText)) continue;
+
+          out.push({ character, prio, itemText, raw, mode: "explicit" });
+          continue;
+        }
+
+        // Fallback: ONLY accept "Name - Item" (space-hyphen-space) exactly 2 chunks.
+        const parts = raw.split(" - ").map(normalizeLine).filter(Boolean);
+        if (parts.length === 2) {
+          const [character, itemText] = parts;
+          if (looksLikeTimeOrDateToken(itemText)) continue;
+
+          if (!isPlausibleCharacterName(character)) continue;
+          if (!isPlausibleItemText(itemText)) continue;
+
+          out.push({ character, prio: fallbackPrio, itemText, raw, mode: "fallback" });
+          continue;
+        }
+      }
+      return out;
+    }
+
+    // -----------------------------
+    // Matcher (Fuse)
+    // -----------------------------
+    function makeFuse(items, threshold) {
+      return new Fuse(items, {
+        keys: ["name"],
+        includeScore: true,
+        threshold,
+        ignoreLocation: true,
+        minMatchCharLength: 3
+      });
+    }
+
+    function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+
+    function matchOne(fuse, itemText) {
+      const q = normalizeLine(itemText).toLowerCase();
+      const results = fuse.search(q).slice(0, 2);
+
+      if (!results.length) return { status: "no-match", confidence: 0 };
+
+      const best = results[0];
+      const bestScore = best.score ?? 1;
+      const confidence = clamp01(1 - bestScore);
+
+      let ambiguous = false;
+      if (results[1]) {
+        const secondScore = results[1].score ?? 1;
+        ambiguous = (secondScore - bestScore) < 0.05;
+      }
+
+      const status =
+        confidence >= 0.90 && !ambiguous ? "high" :
+        confidence >= 0.60 ? "medium" :
+        "low";
+
+      return {
+        matchName: best.item.name,
+        turtleDbItemId: best.item.turtleDbItemId,
+        quality: best.item.quality,
+        confidence,
+        ambiguous,
+        status
+      };
+    }
+
+    // -----------------------------
+    // RollFor JSON + Base64 (+ ML lines)
+    // -----------------------------
+    function base64EncodeUtf8(str) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = "";
+      for (const b of bytes) bin += String.fromCharCode(b);
+      return btoa(bin);
+    }
+
+    function buildRollFor(raidName, rows, matchReports, minConf) {
+      const byChar = new Map();
+      const qa = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const rep = matchReports[i];
+
+        const accept = rep.turtleDbItemId && rep.confidence >= minConf;
+
+        qa.push({ ...row, ...rep, accept });
+
+        if (!accept) continue;
+
+        if (!byChar.has(row.character)) byChar.set(row.character, []);
+        byChar.get(row.character).push({
+          id: rep.turtleDbItemId,
+          quality: rep.quality
+        });
+      }
+
+      // Copy-friendly ML lines for Excel:
+      // Character-MS/OS-Matched Item Name
+      const mlLines = qa
+        .filter(x => x.accept)
+        .map(x => `${x.character}-${x.prio}-${x.matchName}`)
+        .join("\n");
+
+      const payload = {
+        metadata: {
+          id: currentRecordId(raidName), // e.g. TowerofKarazhan_04Feb2026
+          origin: "discordPaste",
+          instances: [raidName]
+        },
+        softreserves: Array.from(byChar.entries()).map(([name, items]) => ({ name, items }))
+      };
+
+      const json = JSON.stringify(payload);
+      const base64 = base64EncodeUtf8(json);
+
+      const summary = {
+        totalParsed: rows.length,
+        accepted: qa.filter(x => x.accept).length,
+        high: qa.filter(x => x.status === "high").length,
+        medium: qa.filter(x => x.status === "medium").length,
+        low: qa.filter(x => x.status === "low").length,
+        noMatch: qa.filter(x => x.status === "no-match").length,
+        ambiguous: qa.filter(x => x.ambiguous).length
+      };
+
+      return { json, base64, qa, summary, mlLines };
+    }
+
+    // -----------------------------
+    // UI helpers
+    // -----------------------------
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function pill(status) {
+      const cls = status === "high" ? "pill high"
+        : status === "medium" ? "pill medium"
+        : status === "low" ? "pill low"
+        : "pill nomatch";
+      return `<span class="${cls}">${status}</span>`;
+    }
+
+    function fmtConf(x) {
+      if (typeof x !== "number") return "";
+      return x.toFixed(2);
+    }
+
+    function renderReport(qa) {
+      const tbody = document.querySelector("#reportTable tbody");
+      tbody.innerHTML = "";
+
+      qa.forEach((r, idx) => {
+        const notes = [
+          r.mode === "fallback" ? "fallback" : "",
+          r.ambiguous ? "ambiguous" : "",
+          r.accept ? "" : "rejected"
+        ].filter(Boolean).join(", ");
+
+        const warn = (!r.accept && (r.status === "low" || r.status === "no-match" || r.ambiguous))
+          ? `<span class="warn">${escapeHtml(notes)}</span>`
+          : escapeHtml(notes);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${escapeHtml(r.character)}</td>
+          <td>${escapeHtml(r.prio)}</td>
+          <td>${escapeHtml(r.itemText)}</td>
+          <td>${escapeHtml(r.matchName ?? "")}</td>
+          <td class="mono">${r.turtleDbItemId ?? ""}</td>
+          <td class="mono">${fmtConf(r.confidence)}</td>
+          <td>${pill(r.status)}</td>
+          <td>${warn}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }
+    }
+
+    // -----------------------------
+    // Raid list + dropdown (hosted)
+    // -----------------------------
+    const MANIFEST_PATH = "data/raids.json";
+
+    function raidKey(r) { return `${r.id}|${r.name}`; }
+
+    function parseRaidJson(raidJson) {
+      const id = raidJson.id;
+      const name = raidJson.name;
+
+      const items = (raidJson.raidItems ?? []).map(x => ({
+        name: x.name,
+        turtleDbItemId: x.turtleDbItemId,
+        quality: x.quality
+      }));
+
+      if (typeof id !== "number" || !name || !items.length) {
+        throw new Error("Invalid raid JSON shape (missing id/name/raidItems).");
+      }
+
+      return { id, name, items };
+    }
+
+    async function fetchJson(path) {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Fetch failed (${path}): ${res.status} ${res.statusText}`);
+      return await res.json();
+    }
+
+    async function loadRaidManifest() {
+      const list = await fetchJson(MANIFEST_PATH);
+      if (!Array.isArray(list)) throw new Error("Manifest must be a JSON array.");
+      return list;
+    }
+
+    function refreshRaidDropdown() {
+      const sel = el("raidSelect");
+      sel.innerHTML = "";
+
+      if (RAID_MAP.size === 0) {
+        sel.disabled = true;
+        sel.innerHTML = `<option value="">No raids found</option>`;
+        el("loadSelectedRaidBtn").disabled = true;
+        return;
+      }
+
+      const raids = Array.from(RAID_MAP.values()).sort((a, b) => a.name.localeCompare(b.name));
+      for (const r of raids) {
+        const opt = document.createElement("option");
+        opt.value = raidKey(r);
+        opt.textContent = r.name; // label
+        sel.appendChild(opt);
+      }
+
+      sel.disabled = false;
+      el("loadSelectedRaidBtn").disabled = false;
+    }
+
+    async function initRaidList() {
+      // For recordkeeping: treat "upload date" as "run date" in hosted mode
+      UPLOAD_DATE_STR = formatUploadDate(new Date());
+
+      const status = el("raidStatus");
+      status.textContent = "Loading raid list…";
+      status.className = "small";
+
+      RAID_MAP.clear();
+      RAID_NAME = null;
+      RAID_ITEMS = null;
+      FUSE = null;
+      el("runBtn").disabled = true;
+
+      const list = await loadRaidManifest();
+
+      for (const r of list) {
+        if (!r || typeof r.id !== "number" || !r.name || !r.path) continue;
+        // Store path; load items lazily on selection
+        RAID_MAP.set(`${r.id}|${r.name}`, { id: r.id, name: r.name, path: r.path, items: null });
+      }
+
+      refreshRaidDropdown();
+
+      if (RAID_MAP.size === 0) {
+        status.textContent = `No raids found in ${MANIFEST_PATH}.`;
+      } else {
+        status.textContent = `Loaded ${RAID_MAP.size} raid(s). Select one and click “Load Selected Raid”.`;
+      }
+    }
+
+    el("loadSelectedRaidBtn").addEventListener("click", async () => {
+      const status = el("raidStatus");
+      const key = el("raidSelect").value;
+
+      if (!key || !RAID_MAP.has(key)) {
+        status.textContent = "Select a raid first.";
+        status.className = "small warn";
+        return;
+      }
+
+      try {
+        status.textContent = "Loading selected raid…";
+        status.className = "small";
+
+        const threshold = Number(el("fuseThreshold").value);
+        const raid = RAID_MAP.get(key);
+
+        if (!raid.items) {
+          const raidJson = await fetchJson(raid.path);
+          const parsed = parseRaidJson(raidJson);
+          raid.items = parsed.items;
+        }
+
+        RAID_NAME = raid.name;
+        RAID_ITEMS = raid.items;
+        FUSE = makeFuse(RAID_ITEMS, threshold);
+
+        status.textContent = `Loaded: ${RAID_NAME} (${RAID_ITEMS.length} items)`;
+        status.className = "small";
+
+        el("runBtn").disabled = false;
+      } catch (e) {
+        status.textContent = `Error: ${e?.message ?? e}`;
+        status.className = "small warn";
+      }
+    });
+
+// -----------------------------
+    // Run / Clear / Copy
+    // -----------------------------
+    el("clearBtn").addEventListener("click", () => {
+      el("discordInput").value = "";
+      el("jsonOut").value = "";
+      el("b64Out").value = "";
+      el("mlOut").value = "";
+      el("summary").textContent = "—";
+      document.querySelector("#reportTable tbody").innerHTML = "";
+      el("copyJsonBtn").disabled = true;
+      el("copyB64Btn").disabled = true;
+      el("copyMlBtn").disabled = true;
+    });
+
+    el("runBtn").addEventListener("click", () => {
+      if (!FUSE || !RAID_NAME) return;
+
+      // rebuild Fuse if threshold changed
+      const threshold = Number(el("fuseThreshold").value);
+      FUSE = makeFuse(RAID_ITEMS, threshold);
+
+      const fallbackPrio = el("fallbackPrio").value;
+      const minConf = Number(el("minConf").value);
+      const paste = el("discordInput").value;
+
+      const rows = parseDiscordPaste(paste, fallbackPrio);
+      const matches = rows.map(r => matchOne(FUSE, r.itemText));
+
+      const { json, base64, qa, summary, mlLines } = buildRollFor(RAID_NAME, rows, matches, minConf);
+
+      el("jsonOut").value = json;
+      el("b64Out").value = base64;
+      el("mlOut").value = mlLines;
+
+      el("summary").innerHTML = `
+        <div><b>Raid:</b> ${escapeHtml(RAID_NAME)}</div>
+        <div><b>Record ID:</b> <span class="mono">${escapeHtml(currentRecordId(RAID_NAME))}</span></div>
+        <div><b>Parsed:</b> ${summary.totalParsed} &nbsp; <b>Accepted:</b> ${summary.accepted}</div>
+        <div><b>High:</b> ${summary.high} &nbsp; <b>Medium:</b> ${summary.medium} &nbsp; <b>Low:</b> ${summary.low} &nbsp; <b>No match:</b> ${summary.noMatch} &nbsp; <b>Ambiguous:</b> ${summary.ambiguous}</div>
+        <div class="small">Accepted = confidence ≥ ${minConf.toFixed(2)}.</div>
+      `;
+
+      renderReport(qa);
+
+      el("copyJsonBtn").disabled = !json;
+      el("copyB64Btn").disabled = !base64;
+      el("copyMlBtn").disabled = !mlLines;
+    });
+
+    el("copyJsonBtn").addEventListener("click", async () => {
+      const ok = await copyToClipboard(el("jsonOut").value);
+      if (ok) alert("Copied raw JSON.");
+    });
+
+    el("copyB64Btn").addEventListener("click", async () => {
+      const ok = await copyToClipboard(el("b64Out").value);
+      if (ok) alert("Copied RollFor Base64.");
+    });
+
+    el("copyMlBtn").addEventListener("click", async () => {
+      const ok = await copyToClipboard(el("mlOut").value);
+      if (ok) alert("Copied ML lines.");
+    });
+  
+    // Kick off hosted raid list
+    initRaidList().catch(err => {
+      const status = el("raidStatus");
+      status.textContent = `Could not load ${MANIFEST_PATH}: ${err?.message ?? err}`;
+      status.className = "small warn";
+      refreshRaidDropdown();
+    });
+</script>
+</body>
+</html>
+
+
+
