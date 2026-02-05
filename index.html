@@ -5,54 +5,124 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NerdRes | A Discord → RollFor Import Conversion Tool</title>
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { margin: 16px; max-width: 1100px; }
-    h1 { font-size: 28px; margin: 0 0 12px; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
-    .card h2 { font-size: 14px; margin: 0 0 8px; }
-    textarea {
-      width: 100%;
-      min-height: 220px;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 12px;
-      box-sizing: border-box;
-    }
-    input[type="number"], select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-    }
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .controls2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .controls3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    button {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid #333;
-      background: #111;
-      color: #fff;
-      cursor: pointer;
-    }
-    button.secondary { background: #fff; color: #111; border-color: #aaa; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .small { font-size: 12px; color: #444; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border-bottom: 1px solid #eee; padding: 6px 6px; vertical-align: top; }
-    th { text-align: left; color: #333; }
-    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; border: 1px solid #ddd; }
-    .high { background: #eaffea; }
-    .medium { background: #fff7db; }
-    .low { background: #ffe4e4; }
-    .nomatch { background: #f2f2f2; }
-    .warn { color: #9a0000; font-weight: 600; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    details > summary { cursor: pointer; user-select: none; }
+    :root{
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+
+  /* Dark theme tokens */
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --surface: #121a23;
+  --surface2: #0f1620;
+  --text: #e7eef7;
+  --muted: #a9b6c6;
+  --border: #223041;
+  --border2: #2b3b50;
+
+  --input-bg: #0c131c;
+  --input-border: #2a3a4f;
+
+  --btn-bg: #e7eef7;
+  --btn-text: #0b0f14;
+  --btn-border: #c9d4e2;
+
+  --btn2-bg: #121a23;
+  --btn2-text: #e7eef7;
+  --btn2-border: #2b3b50;
+
+  --shadow: 0 10px 25px rgba(0,0,0,.25);
+}
+
+body{
+  margin: 16px;
+  max-width: 1100px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1{ font-size: 28px; margin: 0 0 12px; }
+
+.row{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.card{
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.card h2{ font-size: 14px; margin: 0 0 8px; color: var(--muted); }
+
+.small{ font-size: 12px; color: var(--muted); }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+textarea,
+input[type="number"],
+select{
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text);
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+textarea{ min-height: 220px; }
+
+textarea::placeholder{ color: rgba(231,238,247,.45); }
+
+.controls{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.controls2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.controls3{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+button{
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+}
+
+button.secondary{
+  background: var(--btn2-bg);
+  color: var(--btn2-text);
+  border-color: var(--btn2-border);
+}
+
+button:disabled{ opacity: .5; cursor: not-allowed; }
+
+table{ width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td{
+  border-bottom: 1px solid var(--border);
+  padding: 6px 6px;
+  vertical-align: top;
+}
+th{ text-align: left; color: var(--muted); }
+
+.pill{
+  display:inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* Your quality pills, but dark-friendly */
+.high   { background: rgba(40, 180, 90, .18); border-color: rgba(40, 180, 90, .35); }
+.medium { background: rgba(255, 190, 60, .18); border-color: rgba(255, 190, 60, .35); }
+.low    { background: rgba(255, 90, 90, .16); border-color: rgba(255, 90, 90, .35); }
+.nomatch{ background: rgba(180, 190, 205, .12); border-color: rgba(180, 190, 205, .25); }
+
+.warn{ color: #ff8a8a; font-weight: 600; }
+
+details > summary{ cursor: pointer; user-select: none; }
+
   </style>
 </head>
 <body>
@@ -719,6 +789,7 @@ function looksLikeTimeOrDateToken(s) {
 </script>
 </body>
 </html>
+
 
 
 
