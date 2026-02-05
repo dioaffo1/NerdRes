@@ -138,7 +138,7 @@ details > summary{ cursor: pointer; user-select: none; }
           <option value="">Loading raid list…</option>
         </select>
         <div class="small" style="margin-top:6px">
-          This page loads <span class="mono">data/raids.json</span>, then fetches the selected raid JSON from <span class="mono">data/</span>.
+          Select the raid you are entering SRs for and click LOAD.
         </div>
       </div>
 
@@ -151,7 +151,7 @@ details > summary{ cursor: pointer; user-select: none; }
     <div style="margin-top:10px" class="controls2">
       <button id="loadSelectedRaidBtn" disabled>Load Selected Raid</button>
       <div class="small">
-        If the raid list fails to load, check that <span class="mono">data/raids.json</span> exists and paths are correct.
+        If the raid list fails to load, contact the page developer.
       </div>
     </div>
   </div>
@@ -163,7 +163,7 @@ details > summary{ cursor: pointer; user-select: none; }
 
       <div class="controls" style="margin-top:10px">
         <div>
-          <label class="small">Fallback “Name - Item” prio</label>
+          <label class="small">How to treat SRs without MS/OS specified?</label>
           <select id="fallbackPrio">
             <option value="MS" selected>MS</option>
             <option value="OS">OS</option>
@@ -174,13 +174,13 @@ details > summary{ cursor: pointer; user-select: none; }
           <input id="minConf" type="number" min="0" max="1" step="0.01" value="0.60" />
         </div>
         <div>
-          <label class="small">Fuse threshold (lower = stricter)</label>
+          <label class="small">Fuse.js fuzzy match threshold (lower = stricter)</label>
           <input id="fuseThreshold" type="number" min="0" max="1" step="0.01" value="0.45" />
         </div>
       </div>
 
       <div style="margin-top:10px" class="controls2">
-        <button id="runBtn" disabled>PARSE & generate Imports</button>
+        <button id="runBtn" disabled>PARSE & Generate Imports</button>
         <button id="clearBtn" class="secondary">Clear</button>
       </div>
 
@@ -203,14 +203,14 @@ details > summary{ cursor: pointer; user-select: none; }
       </div>
 
       <div style="margin-top:10px">
-        <label class="small"><b>ML Copy (Character-MS/OS-Matched Item Name)</b></label>
+        <label class="small"><b>ML Worksheet Input (Character-MS/OS-Item)</b></label>
         <textarea id="mlOut" readonly></textarea>
       </div>
 
       <div class="controls3" style="margin-top:10px">
-        <button id="copyB64Btn" class="secondary" disabled>Copy RollFor Base64</button>
-        <button id="copyMlBtn" class="secondary" disabled>Copy ML Lines</button>
-        <button id="copyJsonBtn" class="secondary" disabled>Copy Raw JSON</button>
+        <button id="copyB64Btn" class="secondary" disabled>Export to RollFor</button>
+        <button id="copyMlBtn" class="secondary" disabled>Export to ML Worksheet</button>
+        <button id="copyJsonBtn" class="secondary" disabled>Copy Raw JSON (debug)</button>
       </div>
 
       <div style="margin-top:10px">
@@ -223,7 +223,7 @@ details > summary{ cursor: pointer; user-select: none; }
   </div>
 
   <div class="card" style="margin-top:12px">
-    <h2>4) Match Quality Report</h2>
+    <h2>4) Item Match Quality Report</h2>
     <div class="small">Low confidence / ambiguous rows are flagged for review.</div>
     <div style="overflow:auto; margin-top:10px">
       <table id="reportTable">
@@ -789,6 +789,7 @@ function looksLikeTimeOrDateToken(s) {
 </script>
 </body>
 </html>
+
 
 
 
