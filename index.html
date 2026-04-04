@@ -315,6 +315,27 @@ details > summary{ cursor: pointer; user-select: none; }
     </div>
 
     <div class="card" style="margin-top:12px">
+      <h2>Unawarded Soft Reserves</h2>
+      <div class="small" id="unawardedSummary">No data loaded.</div>
+      <div style="overflow:auto; margin-top:10px">
+        <table id="unawardedTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>Item ID</th>
+              <th>Dropped?</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px">
+        <button id="copyUnawardedBtn" class="secondary" disabled>Copy to Clipboard</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
       <h2>Loot</h2>
       <div class="small" id="lootSummary">No data loaded.</div>
       <div style="overflow:auto; margin-top:10px">
@@ -921,6 +942,61 @@ function looksLikeTimeOrDateToken(s) {
       return "low";
     }
 
+    function computeUnawardedSRs(data) {
+      const signups = data.attendance?.soft_res_signups ?? [];
+      const loot = data.loot ?? [];
+
+      // Build a set of "playerName|itemId" for items a player actually received
+      const wonSet = new Set();
+      for (const entry of loot) {
+        const recipient = entry.final_recipient?.name ?? entry.original_winner?.name;
+        if (recipient && entry.item_id) {
+          wonSet.add(`${recipient}|${entry.item_id}`);
+        }
+      }
+
+      // Build set of item IDs that dropped
+      const droppedIds = new Set(loot.map(e => e.item_id).filter(Boolean));
+
+      const unawarded = [];
+      for (const signup of signups) {
+        for (const itemId of (signup.items ?? [])) {
+          const key = `${signup.name}|${itemId}`;
+          if (!wonSet.has(key)) {
+            unawarded.push({
+              player: signup.name,
+              itemId: itemId,
+              dropped: droppedIds.has(itemId)
+            });
+          }
+        }
+      }
+
+      return unawarded;
+    }
+
+    function renderUnawardedSRs(unawarded) {
+      el("unawardedSummary").textContent = unawarded.length > 0
+        ? `${unawarded.length} unawarded soft reserve(s).`
+        : "All soft reserves were awarded.";
+
+      const tbody = document.querySelector("#unawardedTable tbody");
+      tbody.innerHTML = "";
+
+      unawarded.forEach((entry, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${escapeHtml(entry.player)}</td>
+          <td class="mono">${entry.itemId}</td>
+          <td>${entry.dropped ? "Yes" : "No"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      el("copyUnawardedBtn").disabled = unawarded.length === 0;
+    }
+
     function renderPostRaidData(data) {
       // Attendance summary
       const att = data.attendance ?? {};
@@ -928,7 +1004,7 @@ function looksLikeTimeOrDateToken(s) {
       const events = att.events ?? [];
       const snapshots = att.snapshots ?? [];
       el("attendanceSummary").innerHTML = `
-        <div><b>Soft-Res Signups:</b> ${signups.length}</div>
+        <div><b>Soft-Res Signups:</b> ${signups.length}${signups.length === 0 ? ' <span class="warn">(no SR data in export — was SR imported before the raid?)</span>' : ''}</div>
         <div><b>Events:</b> ${events.length}</div>
         <div><b>Snapshots:</b> ${snapshots.length}</div>
       `;
@@ -957,6 +1033,10 @@ function looksLikeTimeOrDateToken(s) {
         `;
         tbody.appendChild(tr);
       });
+
+      // Unawarded SRs
+      const unawarded = computeUnawardedSRs(data);
+      renderUnawardedSRs(unawarded);
     }
 
     el("decodePostRaidBtn").addEventListener("click", () => {
@@ -984,10 +1064,26 @@ function looksLikeTimeOrDateToken(s) {
       reader.readAsText(file);
     });
 
+    el("copyUnawardedBtn").addEventListener("click", async () => {
+      const rows = [];
+      document.querySelectorAll("#unawardedTable tbody tr").forEach(tr => {
+        const cells = tr.querySelectorAll("td");
+        rows.push(`${cells[1].textContent}\t${cells[2].textContent}\t${cells[3].textContent}`);
+      });
+      if (rows.length) {
+        const text = "Player\tItem ID\tDropped?\n" + rows.join("\n");
+        const ok = await copyToClipboard(text);
+        if (ok) alert("Copied unawarded SRs to clipboard.");
+      }
+    });
+
     el("clearPostRaidBtn").addEventListener("click", () => {
       el("postRaidB64Input").value = "";
       el("postRaidFileInput").value = "";
       el("attendanceSummary").textContent = "No data loaded.";
+      el("unawardedSummary").textContent = "No data loaded.";
+      document.querySelector("#unawardedTable tbody").innerHTML = "";
+      el("copyUnawardedBtn").disabled = true;
       el("lootSummary").textContent = "No data loaded.";
       document.querySelector("#lootTable tbody").innerHTML = "";
     });
